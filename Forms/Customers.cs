@@ -1,4 +1,4 @@
-﻿using System;
+﻿﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -170,9 +170,63 @@ namespace Pharmacy.Forms
 
         }
 
+        private void LoadCustomerData()
+        {
+            MySqlConnection conn = new MySqlConnection(connstring);
+            conn.Open();
+            string sql = "SELECT cname, gender, address, Insurance_ID, GROUP_CONCAT(phone SEPARATOR '-') AS phone " +
+                         "FROM customer LEFT JOIN phone ON customer.cid = phone.cid GROUP BY customer.cid; ";
+            MySqlCommand cmd = new MySqlCommand(sql, conn);
+            MySqlDataReader rd;
+            rd = cmd.ExecuteReader();
+            listView2.Items.Clear();
+            while (rd.Read())
+            {
+                ListViewItem lv = new ListViewItem(rd.GetString(0).ToString());
+                lv.SubItems.Add(rd.GetString(1).ToString());
+                lv.SubItems.Add(rd.GetString(2).ToString());
+                lv.SubItems.Add(rd.GetInt32(3).ToString());
+                lv.SubItems.Add(rd.GetString(4).ToString());
+                listView2.Items.Add(lv);
+            }
+            rd.Close();
+            cmd.Dispose();
+            conn.Close();
+        }
+
+        private bool CustomerExists(string customerName)
+        {
+            using (MySqlConnection conn = new MySqlConnection(connstring))
+            {
+                conn.Open();
+                string query = "SELECT COUNT(*) FROM customer WHERE CName = @cname";
+                using (MySqlCommand cmd = new MySqlCommand(query, conn))
+                {
+                    cmd.Parameters.AddWithValue("@cname", customerName);
+                    int count = Convert.ToInt32(cmd.ExecuteScalar());
+                    return count > 0;
+                }
+            }
+        }
+
         private void bunifuThinButton21_Click(object sender, EventArgs e)
         {
-         
+            // Validate input fields
+            if (string.IsNullOrEmpty(name.Text) || string.IsNullOrEmpty(gender.Text) ||
+                string.IsNullOrEmpty(address.Text) || insurance.SelectedValue == null ||
+                string.IsNullOrEmpty(Phone1.Text))
+            {
+                MessageBox.Show("Please fill in all required fields.");
+                return; // Stop execution if any field is missing
+            }
+
+            // Check if the customer already exists
+            if (CustomerExists(name.Text))
+            {
+                MessageBox.Show("Customer already exists!");
+                return;
+            }
+
             using (MySqlConnection sqlcon = new MySqlConnection(connstring))
             {
                 string insert = "insert into customer (CName, Gender, Address, Insurance_ID) values (@cname, @gender," +
@@ -217,6 +271,15 @@ namespace Pharmacy.Forms
                 }
             }
             MessageBox.Show("Customer Added!");
+            LoadCustomerData();
+
+            // Clear textboxes
+            name.Text = string.Empty;
+            gender.SelectedIndex = -1;
+            address.Text = string.Empty;
+            insurance.SelectedIndex = -1; // Reset the ComboBox selection
+            Phone1.Text = string.Empty;
+            Phone2.Text = string.Empty;
         }
 
         private void listView2_SelectedIndexChanged(object sender, EventArgs e)

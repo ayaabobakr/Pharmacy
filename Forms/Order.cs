@@ -21,6 +21,35 @@ namespace Pharmacy.Forms
 
 
 
+        private void LoadDataAndUpdateUI()
+        {
+            MySqlConnection conn = new MySqlConnection(connstring);
+            conn.Open();
+            string sql = "select  orderid, (select cname from customer where cid = (select cid from prescription where presid = orderr.PresID))" +
+                "as customer, (select emp_name from employee where EmployeeID = orderr.EmployeeID) as Name, orderdate,batch_number," +
+                "ordered_quantity, medname, price from orderr natural join orderedmed; ";
+            MySqlCommand cmd = new MySqlCommand(sql, conn);
+            MySqlDataReader rd;
+            rd = cmd.ExecuteReader();
+            listView2.Items.Clear();
+            while (rd.Read())
+            {
+                ListViewItem lv = new ListViewItem(rd.GetInt32(0).ToString());
+                lv.SubItems.Add(rd.GetString(1).ToString());
+                lv.SubItems.Add(rd.GetString(2).ToString());
+                lv.SubItems.Add(rd.GetDateTime(3).ToString("dd/MM/yyyy"));
+                lv.SubItems.Add(rd.GetInt32(4).ToString());
+                lv.SubItems.Add(rd.GetInt32(5).ToString());
+                lv.SubItems.Add(rd.GetString(6).ToString());
+                lv.SubItems.Add(rd.GetFloat(7).ToString());
+                listView2.Items.Add(lv);
+            }
+            rd.Close();
+            cmd.Dispose();
+            conn.Close();
+        }
+
+
         private void pictureBox10_Click_1(object sender, EventArgs e)
         {
             System.Windows.Forms.Application.Exit();
@@ -179,58 +208,99 @@ namespace Pharmacy.Forms
 
         private void add_Click(object sender, EventArgs e)
         {
-            
-            
-            
+
+
+
             using (MySqlConnection sqlcon = new MySqlConnection(connstring))
             {
-                string insert = "insert into orderr(PresID,OrderDate,EmployeeID) values((select PresID from Prescription where cid = (select cid from customer where cname = '" + customer.Text + "')), CURDATE()," +
-                    "(select employeeid from employee where emp_name ='" + employee.Text + "')); " +
-                    "insert into OrderedMed (OrderID,batch_number,ordered_quantity,MedName,Price) values" +
-                    " ((select OrderID  from orderr  where PresID = (select PresID from Prescription where cid = (select cid from customer where cname = '" + customer.Text + "' and orderdate = curdate())))," +
-                    "@batchnumber,@quantity, @medname, @price);" +
-                    "update medicine set stock_quantity = stock_quantity - " + quantity.Text + " where MedName = '" + medname.Text + "';";
-                sqlcon.Open();
-                MySqlCommand cmd = new MySqlCommand(insert, sqlcon);
-                mednamee = medname.Text;
-                q = quantity.Text;
-                p = price.Text;
-                cmd.Parameters.Add("@medname", MySqlDbType.VarChar);
-                cmd.Parameters["@medname"].Value = medname.Text;
+                try
+                {
+                    // Validate input fields
+                    if (string.IsNullOrEmpty(customer.Text) || string.IsNullOrEmpty(employee.Text) ||
+                        string.IsNullOrEmpty(medname.Text) || string.IsNullOrEmpty(quantity.Text) ||
+                        string.IsNullOrEmpty(price.Text) || string.IsNullOrEmpty(batch.Text))
+                    {
+                        MessageBox.Show("Please fill in all fields.");
+                        return; // Stop execution if any field is missing
+                    }
 
-                cmd.Parameters.Add("@quantity", MySqlDbType.Int32);
-                cmd.Parameters["@quantity"].Value = quantity.Text;
+                    sqlcon.Open();
 
-                cmd.Parameters.Add("@price", MySqlDbType.Float);
-                cmd.Parameters["@price"].Value = price.Text;
+                    // SQL command with parameterized queries to avoid SQL injection
+                    string insert = "INSERT INTO orderr (PresID, OrderDate, EmployeeID) " +
+                                    "VALUES ((SELECT PresID FROM Prescription WHERE cid = (SELECT cid FROM customer WHERE cname = @customer)), " +
+                                    "CURDATE(), (SELECT employeeid FROM employee WHERE emp_name = @employee)); " +
+                                    "INSERT INTO OrderedMed (OrderID, batch_number, ordered_quantity, MedName, Price) " +
+                                    "VALUES ((SELECT OrderID FROM orderr WHERE PresID = (SELECT PresID FROM Prescription " +
+                                    "WHERE cid = (SELECT cid FROM customer WHERE cname = @customer AND orderdate = CURDATE()))), " +
+                                    "@batchnumber, @quantity, @medname, @price); " +
+                                    "UPDATE medicine SET stock_quantity = stock_quantity - @quantity WHERE MedName = @medname;";
 
-                cmd.Parameters.Add("@batchnumber", MySqlDbType.Int32);
-                cmd.Parameters["@batchnumber"].Value = batch.Text;
+                    MySqlCommand cmd = new MySqlCommand(insert, sqlcon);
 
-                cmd.ExecuteNonQuery();
-                sqlcon.Close();
+                    // Assign parameter values
+                    cmd.Parameters.AddWithValue("@customer", customer.Text);
+                    cmd.Parameters.AddWithValue("@employee", employee.Text);
+                    cmd.Parameters.AddWithValue("@medname", medname.Text);
+                    cmd.Parameters.AddWithValue("@quantity", Convert.ToInt32(quantity.Text));
+                    cmd.Parameters.AddWithValue("@price", Convert.ToDouble(price.Text));
+                    cmd.Parameters.AddWithValue("@batchnumber", Convert.ToInt32(batch.Text));
 
+                    cmd.ExecuteNonQuery();
+                    sqlcon.Close();
 
+                    MessageBox.Show("Ordered!");
+                    // Load data and update UI after successful addition
+                    LoadDataAndUpdateUI();
+
+                    
+
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Error: " + ex.Message);
+                }
             }
-            MessageBox.Show("Ordered!");
+
         }
 
 
         private void label4_Click(object sender, EventArgs e)
         {
             MySqlConnection conn = new MySqlConnection(connstring);
-            conn.Open();
-            string sql = "select  price from medicine where medname = '" + medname.Text + "' and batch_number = '" + batch.Text + "';";
-            MySqlCommand cmd = new MySqlCommand(sql, conn);
-            MySqlDataReader rd;
-            rd = cmd.ExecuteReader();
-            while (rd.Read())
+
+            try
             {
-                price.Text = rd.GetFloat(0).ToString();
+                conn.Open();
+                string sql = "SELECT price FROM medicine WHERE medname = '" + medname.Text + "' AND batch_number = '" + batch.Text + "';";
+                MySqlCommand cmd = new MySqlCommand(sql, conn);
+                MySqlDataReader rd = cmd.ExecuteReader();
+
+                while (rd.Read())
+                {
+                    if (float.TryParse(quantity.Text, out float quantityValue))
+                    {
+                        float priceValue = rd.GetFloat(0) * quantityValue;
+                        price.Text = priceValue.ToString();
+                    }
+                    else
+                    {
+                        MessageBox.Show("Please enter a valid quantity.");
+                    }
+                }
+
+                rd.Close();
+                cmd.Dispose();
             }
-            rd.Close();
-            cmd.Dispose();
-            conn.Close();
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error: " + ex.Message);
+            }
+            finally
+            {
+                conn.Close();
+            }
+
         }
 
         private void print_Click(object sender, EventArgs e)
@@ -266,6 +336,14 @@ namespace Pharmacy.Forms
 
                 Receipt r = new Receipt();
                 r.Show();
+
+                // Clear text fields
+                customer.SelectedIndex = -1;
+                employee.SelectedIndex = -1;
+                medname.SelectedIndex = -1;
+                quantity.Text = string.Empty;
+                price.Text = string.Empty;
+                batch.SelectedIndex = -1;
             }
         }
     }

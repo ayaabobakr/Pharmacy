@@ -24,6 +24,31 @@ namespace Pharmacy.Forms
             System.Windows.Forms.Application.Exit();
         }
 
+        private void LoadDataAndUpdateUI()
+        {
+            MySqlConnection conn = new MySqlConnection(connstring);
+            conn.Open();
+            string sql = "SELECT presid, (select cname from customer where cid = prescription.cid)" +
+                         "as Name, presdate, medname, quantity FROM prescription natural join prescribedmed where prescription.presid = prescribedmed.presid;";
+            MySqlCommand cmd = new MySqlCommand(sql, conn);
+            MySqlDataReader rd;
+            rd = cmd.ExecuteReader();
+            listView2.Items.Clear();
+            while (rd.Read())
+            {
+                ListViewItem lv = new ListViewItem(rd.GetInt32(0).ToString());
+                lv.SubItems.Add(rd.GetString(1).ToString());
+                lv.SubItems.Add(rd.GetDateTime(2).ToString("dd/MM/yyyy"));
+                lv.SubItems.Add(rd.GetString(3).ToString());
+                lv.SubItems.Add(rd.GetInt32(4).ToString());
+                listView2.Items.Add(lv);
+            }
+            rd.Close();
+            cmd.Dispose();
+            conn.Close();
+        }
+
+
         private void Prescription_Load(object sender, EventArgs e)
         {
             MySqlConnection con = new MySqlConnection(connstring);
@@ -117,6 +142,11 @@ namespace Pharmacy.Forms
 
         private void bunifuThinButton21_Click(object sender, EventArgs e)
         {
+            if (string.IsNullOrEmpty(customer.Text) || string.IsNullOrEmpty(medname.Text) || string.IsNullOrEmpty(quantity.Text))
+            {
+                MessageBox.Show("Please fill in all required fields.");
+                return;
+            }
             using (MySqlConnection sqlcon = new MySqlConnection(connstring))
             {
                 string insert = "insert into Prescription (CID, PresDate) values ((select cid from customer where cname = '" + customer.Text + "'), CURDATE()); " +
@@ -136,6 +166,13 @@ namespace Pharmacy.Forms
 
             }
             MessageBox.Show("Prescription Added!");
+
+            LoadDataAndUpdateUI();
+
+            // Clear fields
+            customer.SelectedIndex = -1;
+            medname.Text = string.Empty;
+            quantity.Text = string.Empty;
         }
     }
 }

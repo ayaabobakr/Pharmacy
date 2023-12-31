@@ -183,22 +183,8 @@ namespace Pharmacy
 
         private void button1_Click(object sender, EventArgs e)
         {
-            Report report = new Report();
-            report.Show();
-            MySqlConnection con = new MySqlConnection(connstring);
-            if (con.State != ConnectionState.Open)
-            {
-                con.Open();
-            }
-            MySqlCommand cmd = new MySqlCommand("select * from medicine", con);
-            MySqlDataAdapter adap = new MySqlDataAdapter(cmd);
-            DataSet ds = new DataSet();
-            adap.Fill(ds, "medicine");
-            CrystalReport1 cr1 = new CrystalReport1();
-            cr1.SetDataSource(ds);
-            report.crystalReportViewer1.ReportSource = cr1;
-            report.crystalReportViewer1.Refresh();
-            con.Close();
+            
         }
+
     }
 }

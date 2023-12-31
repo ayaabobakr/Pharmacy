@@ -24,6 +24,36 @@ namespace Pharmacy.Forms
             System.Windows.Forms.Application.Exit();
         }
 
+
+        private void RefreshMedicineList()
+        {
+            MySqlConnection conn = new MySqlConnection(connstring);
+            conn.Open();
+            string sql = "SELECT * FROM medicine;";
+            MySqlCommand cmd = new MySqlCommand(sql, conn);
+            MySqlDataReader rd;
+            rd = cmd.ExecuteReader();
+            listView2.Items.Clear();
+            while (rd.Read())
+            {
+                ListViewItem lv = new ListViewItem(rd.GetInt32(0).ToString());
+                lv.SubItems.Add(rd.GetString(1).ToString());
+                lv.SubItems.Add(rd.GetString(2).ToString());
+                lv.SubItems.Add(rd.GetString(3).ToString());
+                lv.SubItems.Add(rd.GetInt32(4).ToString());
+                lv.SubItems.Add(rd.GetDateTime(5).ToString("yyyy/MM/dd"));
+                lv.SubItems.Add(rd.GetDateTime(6).ToString("yyyy/MM/dd"));
+                lv.SubItems.Add(rd.GetFloat(7).ToString());
+                listView2.Items.Add(lv);
+            }
+            rd.Close();
+            cmd.Dispose();
+            conn.Close();
+        }
+
+
+
+
         private void textBox8_TextChanged(object sender, EventArgs e)
         {
             MySqlConnection con = new MySqlConnection(connstring);
@@ -215,48 +245,76 @@ namespace Pharmacy.Forms
 
             }
             MessageBox.Show("Medicine Updated!");
+
+            RefreshMedicineList();
+
+            // Clear textboxes
+            name.Text = string.Empty;
+            batch.Text = string.Empty;
+            manufacture.Text = string.Empty;
+            type.SelectedIndex = -1;
+            quantity.Text = string.Empty;
+            mfgdate.Text = string.Empty;
+            expdate.Text = string.Empty;
+            price.Text = string.Empty;
         }
 
         private void bunifuThinButton21_Click(object sender, EventArgs e)
         {
             using (MySqlConnection sqlcon = new MySqlConnection(connstring))
             {
-                string insert = "insert into medicine (batch_number, medname, medicinetype, manufacturer, stock_quantity," +
-                    "manufdate, expirydate,price) values (@batch_number, @medname,@medicinetype,@manufacturer,@stock," +
-                    "@mfgdate, @expdate,@price);";
-                sqlcon.Open();
-                MySqlCommand cmd = new MySqlCommand(insert, sqlcon);
+                try
+                {
+                    // Validate input fields
+                    if (string.IsNullOrEmpty(batch.Text) || string.IsNullOrEmpty(name.Text) ||
+                        string.IsNullOrEmpty(type.Text) || string.IsNullOrEmpty(manufacture.Text) ||
+                        string.IsNullOrEmpty(mfgdate.Text) || string.IsNullOrEmpty(expdate.Text) ||
+                        string.IsNullOrEmpty(price.Text) || string.IsNullOrEmpty(quantity.Text))
+                    {
+                        MessageBox.Show("Please fill in all fields.");
+                        return; // Stop execution if any field is missing
+                    }
 
-                cmd.Parameters.Add("@batch_number", MySqlDbType.Int32);
-                cmd.Parameters["@batch_number"].Value = batch.Text;
+                    // If all fields are present, proceed with the insertion
+                    string insert = "INSERT INTO medicine (batch_number, medname, medicinetype, manufacturer, stock_quantity," +
+                        "manufdate, expirydate, price) VALUES (@batch_number, @medname, @medicinetype, @manufacturer, @stock," +
+                        "@mfgdate, @expdate, @price);";
 
-                cmd.Parameters.Add("@medname", MySqlDbType.VarChar);
-                cmd.Parameters["@medname"].Value = name.Text;
+                    sqlcon.Open();
+                    MySqlCommand cmd = new MySqlCommand(insert, sqlcon);
 
-                cmd.Parameters.Add("@medicinetype", MySqlDbType.VarChar);
-                cmd.Parameters["@medicinetype"].Value = type.Text;
+                    cmd.Parameters.AddWithValue("@batch_number", Convert.ToInt32(batch.Text));
+                    cmd.Parameters.AddWithValue("@medname", name.Text);
+                    cmd.Parameters.AddWithValue("@medicinetype", type.Text);
+                    cmd.Parameters.AddWithValue("@manufacturer", manufacture.Text);
+                    cmd.Parameters.AddWithValue("@mfgdate", DateTime.Parse(mfgdate.Text));
+                    cmd.Parameters.AddWithValue("@expdate", DateTime.Parse(expdate.Text));
+                    cmd.Parameters.AddWithValue("@price", Convert.ToDouble(price.Text));
+                    cmd.Parameters.AddWithValue("@stock", Convert.ToInt32(quantity.Text));
 
-                cmd.Parameters.Add("@manufacturer", MySqlDbType.VarChar);
-                cmd.Parameters["@manufacturer"].Value = manufacture.Text;
+                    cmd.ExecuteNonQuery();
+                    sqlcon.Close();
 
-                cmd.Parameters.Add("@mfgdate", MySqlDbType.Date);
-                cmd.Parameters["@mfgdate"].Value = mfgdate.Text;
+                    MessageBox.Show("Medicine Added!");
+                    RefreshMedicineList();
 
-                cmd.Parameters.Add("@expdate", MySqlDbType.Date);
-                cmd.Parameters["@expdate"].Value = expdate.Text;
+                    // Clear textboxes
+                    name.Text = string.Empty;
+                    batch.Text = string.Empty;
+                    manufacture.Text = string.Empty;
+                    type.SelectedIndex = -1;
+                    quantity.Text = string.Empty;
+                    mfgdate.Text = string.Empty;
+                    expdate.Text = string.Empty;
+                    price.Text = string.Empty;
 
-                cmd.Parameters.Add("@price", MySqlDbType.Float);
-                cmd.Parameters["@price"].Value = price.Text;
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Error: " + ex.Message);
+                }
+}
 
-                cmd.Parameters.Add("@stock", MySqlDbType.Int32);
-                cmd.Parameters["@stock"].Value = quantity.Text;
-
-                cmd.ExecuteNonQuery();
-                sqlcon.Close();
-
-
-            }
-            MessageBox.Show("Medicine Added!");
         }
     }
 }

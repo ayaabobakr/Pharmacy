@@ -235,7 +235,7 @@ namespace Pharmacy.Forms
             // quantity
             // 
             this.quantity.Font = new System.Drawing.Font("Century Gothic", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.quantity.Location = new System.Drawing.Point(710, 78);
+            this.quantity.Location = new System.Drawing.Point(513, 77);
             this.quantity.Name = "quantity";
             this.quantity.Size = new System.Drawing.Size(133, 28);
             this.quantity.TabIndex = 16;
@@ -284,7 +284,7 @@ namespace Pharmacy.Forms
             this.label4.AutoSize = true;
             this.label4.Font = new System.Drawing.Font("Century Gothic", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.label4.ForeColor = System.Drawing.Color.SlateGray;
-            this.label4.Location = new System.Drawing.Point(637, 80);
+            this.label4.Location = new System.Drawing.Point(848, 81);
             this.label4.Name = "label4";
             this.label4.Size = new System.Drawing.Size(20, 21);
             this.label4.TabIndex = 34;
@@ -375,7 +375,7 @@ namespace Pharmacy.Forms
             // price
             // 
             this.price.Font = new System.Drawing.Font("Century Gothic", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.price.Location = new System.Drawing.Point(513, 77);
+            this.price.Location = new System.Drawing.Point(724, 78);
             this.price.Name = "price";
             this.price.Size = new System.Drawing.Size(118, 28);
             this.price.TabIndex = 15;
@@ -385,7 +385,7 @@ namespace Pharmacy.Forms
             this.label16.AutoSize = true;
             this.label16.Font = new System.Drawing.Font("Century Gothic", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.label16.ForeColor = System.Drawing.Color.SlateGray;
-            this.label16.Location = new System.Drawing.Point(509, 52);
+            this.label16.Location = new System.Drawing.Point(720, 53);
             this.label16.Name = "label16";
             this.label16.Size = new System.Drawing.Size(50, 21);
             this.label16.TabIndex = 11;
@@ -396,7 +396,7 @@ namespace Pharmacy.Forms
             this.label15.AutoSize = true;
             this.label15.Font = new System.Drawing.Font("Century Gothic", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.label15.ForeColor = System.Drawing.Color.SlateGray;
-            this.label15.Location = new System.Drawing.Point(706, 53);
+            this.label15.Location = new System.Drawing.Point(509, 52);
             this.label15.Name = "label15";
             this.label15.Size = new System.Drawing.Size(82, 21);
             this.label15.TabIndex = 10;
